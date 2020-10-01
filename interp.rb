@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'minruby'
 
 def evaluate(tree, genv, lenv)
@@ -18,10 +20,16 @@ def evaluate(tree, genv, lenv)
     evaluate(tree[1], genv, lenv) ** evaluate(tree[2], genv, lenv)
   when "=="
     evaluate(tree[1], genv, lenv) == evaluate(tree[2], genv, lenv)
+  when "!="
+    evaluate(tree[1], genv, lenv) != evaluate(tree[2], genv, lenv)
   when ">"
     evaluate(tree[1], genv, lenv) > evaluate(tree[2], genv, lenv)
   when "<"
     evaluate(tree[1], genv, lenv) < evaluate(tree[2], genv, lenv)
+  when ">="
+    evaluate(tree[1], genv, lenv) >= evaluate(tree[2], genv, lenv)
+  when "<="
+    evaluate(tree[1], genv, lenv) <= evaluate(tree[2], genv, lenv)
   when "stmts"
     i = 1
     last = nil
@@ -71,6 +79,33 @@ def evaluate(tree, genv, lenv)
       end
       evaluate(mhd[2], genv, new_lenv)
     end
+  when "ary_new"
+    ary = []
+    i = 0
+    while tree[i + 1]
+      ary[i] = evaluate(tree[i + 1], genv, lenv)
+      i = i + 1
+    end
+    ary
+  when "ary_ref"
+    ary = evaluate(tree[1], genv, lenv)
+    idx = evaluate(tree[2], genv, lenv)
+    ary[idx]
+  when "ary_assign"
+    ary = evaluate(tree[1], genv, lenv)
+    idx = evaluate(tree[2], genv, lenv)
+    val = evaluate(tree[3], genv, lenv)
+    ary[idx] = val
+  when "hash_new"
+    hsh = {}
+    i = 0
+    while tree[i + 1]
+      key = evaluate(tree[i + 1], genv, lenv)
+      val = evaluate(tree[i + 2], genv, lenv)
+      hsh[key] = val
+      i = i + 2
+    end
+    hsh
   else
     p("No method matching")
   end
@@ -94,6 +129,12 @@ end
 str = minruby_load()
 tree = minruby_parse(str)
 
-genv = {"p" => ["builtin", "p"]}
+genv = {
+  "p"             => ["builtin", "p"],
+  "require"       => ["builtin", "require"],
+  "minruby_parse" => ["builtin", "minruby_parse"],
+  "minruby_load"  => ["builtin", "minruby_load"],
+  "minruby_call"  => ["builtin", "minruby_call"]
+}
 lenv = {}
 evaluate(tree, genv, lenv)
